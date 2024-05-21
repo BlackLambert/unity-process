@@ -30,6 +30,14 @@ namespace SBaier.Process.Tests
             {
             },
         };
+
+        private static ProcessArgs[] _singleProcessArguments =
+        {
+            new ProcessArgs() { Progress = 0.3f, Stopped = false },
+            new ProcessArgs() { Progress = 0, Stopped = true },
+            new ProcessArgs() { Progress = 1, Stopped = false },
+            new ProcessArgs() { Progress = 0, Stopped = false }
+        };
         
         private Mock<ProcessQueue> _queueMock;
         private Mock<Resolver> _resolver;
@@ -85,12 +93,33 @@ namespace SBaier.Process.Tests
             yield return 0;
             foreach (ProcessArgs newProcessArgs in processArgs)
             {
-                Process newProcess = CreateProcess(newProcessArgs);
+                Process newProcess = CreateProcessMock(newProcessArgs).Object;
                 _processes.Add(newProcess);
             }
             _queueMock.Raise(queue => queue.OnEnqueue += null);
             Assert.AreEqual(processArgs.Length, _handledProcesses.Count);
             Assert.True(_handledProcesses.All(process => process.Finished || process.Stopped));
+        }
+
+        [UnityTest]
+        public IEnumerator ProcessStarter_CleanStopsCurrentProcess(
+            [ValueSource(nameof(_singleProcessArguments))]ProcessArgs processArgs)
+        {
+            Initialize(Array.Empty<ProcessArgs>());
+            yield return 0;
+            Mock<Process> processMock = CreateInfiniteProcessMock(processArgs);
+            bool processEnded = processArgs.Stopped || processArgs.Progress == 1f;
+
+            void OnStopCallback()
+            {
+                processEnded = true;
+            }
+            
+            processMock.Setup(process => process.Stop()).Callback(OnStopCallback);
+            _processes.Add(processMock.Object);
+            _queueMock.Raise(queue => queue.OnEnqueue += null);
+            _processStarter.Clean();
+            Assert.True(processEnded);
         }
 
         private void Initialize(ProcessArgs[] processArgs)
@@ -106,7 +135,7 @@ namespace SBaier.Process.Tests
         {
             foreach (ProcessArgs args in processArgs)
             {
-                _processes.Add(CreateProcess(args));
+                _processes.Add(CreateProcessMock(args).Object);
             }
         }
 
@@ -148,9 +177,9 @@ namespace SBaier.Process.Tests
             _resolver.Setup(resolver => resolver.Resolve<Observable<Process>>()).Returns(new Observable<Process>());
         }
 
-        private Process CreateProcess(ProcessArgs args)
+        private Mock<Process> CreateProcessMock(ProcessArgs args)
         {
-            Mock<Process> processMock = new Mock<Process>();
+            Mock<Process> processMock = CreateBasicProcessMock(args);
 
             void ProcessStarted()
             {
@@ -160,11 +189,30 @@ namespace SBaier.Process.Tests
                 processMock.Raise(process => process.OnFinished += null);
             }
             
+            processMock.Setup(process => process.Start()).Callback(ProcessStarted);
+            return processMock;
+        }
+
+        private Mock<Process> CreateInfiniteProcessMock(ProcessArgs args)
+        {
+            Mock<Process> processMock = CreateBasicProcessMock(args);
+            
+            void ProcessStarted()
+            {
+                _startedProcessesCount++;
+            }
+            
+            processMock.Setup(process => process.Start()).Callback(ProcessStarted);
+            return processMock;
+        }
+
+        private Mock<Process> CreateBasicProcessMock(ProcessArgs args)
+        {
+            Mock<Process> processMock = new Mock<Process>();
             processMock.Setup(process => process.Progress).Returns(args.Progress);
             processMock.Setup(process => process.Stopped).Returns(args.Stopped);
-            processMock.Setup(process => process.Start()).Callback(ProcessStarted);
             processMock.Setup(process => process.Finished).Returns(args.Progress == 1.0f);
-            return processMock.Object;
+            return processMock;
         }
 
         delegate bool TryGetReturns(out Process process);

@@ -23,7 +23,8 @@ public class ProcessInstaller : MonoInstaller
             .ToNew<BasicProcessQueue>()
             .AsSingle();
 
-        binder.BindToNewSelf<Observable<Process>>();
+        binder.BindToNewSelf<Observable<Process>>()
+            .AsSingle();
         
         binder.BindComponent<BasicProcessStarter>()
             .FromNewComponentOnNewGameObject("ProcessStarter", transform)

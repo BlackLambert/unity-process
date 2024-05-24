@@ -21,6 +21,11 @@ namespace SBaier.Process
             await TryStartNextProcess(immediately: false);
         }
 
+        private void Update()
+        {
+            _currentProcess?.Value?.Update();
+        }
+
         public async void Clean()
         {
             _queue.OnEnqueue -= OnProcessEnqueued;
@@ -35,7 +40,7 @@ namespace SBaier.Process
             }
             
             Process process = _queue.Dequeue();
-            if (process.Finished || process.Stopped)
+            if (process.Finished.Value || process.Stopped.Value)
             {
                 await TryStartNextProcess(immediately);
                 return;
@@ -62,14 +67,14 @@ namespace SBaier.Process
 
         private void AddListeners(Process process)
         {
-            process.OnStopped += OnProcessEnded;
-            process.OnFinished += OnProcessEnded;
+            process.Stopped.OnValueChanged += OnProcessEnded;
+            process.Finished.OnValueChanged += OnProcessEnded;
         }
 
         private void RemoveListeners(Process process)
         {
-            process.OnStopped -= OnProcessEnded;
-            process.OnFinished -= OnProcessEnded;
+            process.Stopped.OnValueChanged -= OnProcessEnded;
+            process.Finished.OnValueChanged -= OnProcessEnded;
         }
 
         private async void OnProcessEnqueued()
@@ -77,8 +82,13 @@ namespace SBaier.Process
             await TryStartNextProcess(immediately: false);
         }
 
-        private async void OnProcessEnded()
+        private async void OnProcessEnded(bool formerValue, bool newValue)
         {
+            if (!newValue)
+            {
+                return;
+            }
+            
             Process process = _currentProcess.Value;
             bool queueHasNext = _queue.HasNext;
             RemoveListeners(process);

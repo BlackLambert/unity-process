@@ -1,19 +1,18 @@
 {
-    "name": "SBaier.Process.Samples",
-    "rootNamespace": "SBaier.Process.Samples",
+    "name": "SBaier.Process.UI",
+    "rootNamespace": "SBaier.Process.UI",
     "references": [
         "GUID:3aabd83be756594428d455002b9a8cfa",
         "GUID:c49894f435cfe854695f32ca9b59a9ff",
-        "GUID:a4e2fcc097ca52d46a2cc62ef3c5e9bf",
         "GUID:6055be8ebefd69e48b49212b09b47b2f",
-        "GUID:f738c01561ca710489691ae167fc00b7"
+        "GUID:a4e2fcc097ca52d46a2cc62ef3c5e9bf"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false

@@ -1,53 +1,61 @@
-using System;
-using System.Collections;
+using SBaier.Process.UI;
 using UnityEngine;
 
 namespace SBaier.Process.Samples
 {
     public class ProcessWithDuration : Process
     {
-        public event Action OnFinished;
-        public event Action OnStopped;
-        public float Progress => GetProgress();
-        public bool Stopped { get; private set; }
-        public string Name { get; private set; }
-
+        public ReadonlyObservable<float> Progress => _progress;
+        public ReadonlyObservable<bool> Stopped => _stopped;
+        public ReadonlyObservable<bool> Finished => _finished;
+        
+        private Observable<float> _progress = new Observable<float>();
+        private Observable<bool> _stopped = new Observable<bool>();
+        private Observable<bool> _finished = new Observable<bool>();
         private readonly float _duration;
-        private readonly CoroutineHelper _coroutineHelper;
         private float? _startTime;
         private float? _stopTime;
-        private Coroutine _routine;
+        private ProcessName _name;
 
-        public ProcessWithDuration(ProcessArguments args,
-            CoroutineHelper coroutineHelper)
+        public ProcessWithDuration(ProcessArguments args)
         {
             _duration = args.Duration;
-            Name = args.Name;
-            _coroutineHelper = coroutineHelper;
+            _name = new ProcessName(args.Name);
         }
         
         public void Start()
         {
-            Debug.Log($"Starting process '{Name}'");
+            Debug.Log($"Starting process '{_name}'");
             _startTime = Time.realtimeSinceStartup;
-            _routine = _coroutineHelper.StartCoroutine(CheckFinished());
+            Update();
+        }
+
+        public void Update()
+        {
+            float deltaTime = GetDeltaTime();
+            _progress.Value = _duration != 0 ? Mathf.Clamp01(deltaTime / _duration) : 1;
+            if (deltaTime >= _duration)
+            {
+                _finished.Value = true;
+            }
         }
 
         public void Stop()
         {
-            Debug.Log($"Stopping process '{Name}'");
+            Debug.Log($"Stopping process '{_name.Name}'");
             _stopTime = Time.realtimeSinceStartup;
-            Stopped = true;
-            OnStopped?.Invoke();
-            CleanRoutine();
+            _stopped.Value = true;
         }
 
-        private IEnumerator CheckFinished()
+        public bool TryGetProperty<TProperty>(out TProperty property) where TProperty : ProcessProperty
         {
-            yield return new WaitUntil(() => GetDeltaTime() >= _duration);
-            Debug.Log($"Finished process '{Name}' after {GetDeltaTime()} seconds");
-            OnFinished?.Invoke();
-            _routine = null;
+            property = default;
+            if (_name is TProperty nameProperty)
+            {
+                property = nameProperty;
+                return true;
+            }
+            return false;
         }
 
         private float GetDeltaTime()
@@ -55,22 +63,6 @@ namespace SBaier.Process.Samples
             float maxTime = _stopTime ?? Time.realtimeSinceStartup;
             float minTime = _startTime ?? Time.realtimeSinceStartup;
             return maxTime - minTime;
-        }
-
-        private float GetProgress()
-        {
-            return _duration != 0 ? Mathf.Clamp01(GetDeltaTime() / _duration) : 1;
-        }
-
-        private void CleanRoutine()
-        {
-            if (_routine == null)
-            {
-                return;
-            }
-            
-            _coroutineHelper.StopCoroutine(_routine);
-            _routine = null;
         }
     }
 }

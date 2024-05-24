@@ -89,8 +89,8 @@ namespace SBaier.Process.Tests
         private Process CreateNewProcess(float progress, bool stopped)
         {
             Mock<Process> mock = new Mock<Process>();
-            mock.Setup(process => process.Progress).Returns(progress);
-            mock.Setup(process => process.Stopped).Returns(stopped);
+            mock.Setup(process => process.Progress.Value).Returns(progress);
+            mock.Setup(process => process.Stopped.Value).Returns(stopped);
             return mock.Object;
         }
     }

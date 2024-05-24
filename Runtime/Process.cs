@@ -1,15 +1,13 @@
-using System;
-
 namespace SBaier.Process
 {
     public interface Process
     {
-        event Action OnFinished;
-        event Action OnStopped;
-        float Progress { get; }
-        bool Stopped { get; }
-        bool Finished => Math.Abs(Progress - 1) < float.Epsilon;
+        ReadonlyObservable<float> Progress { get; }
+        ReadonlyObservable<bool> Stopped { get; }
+        ReadonlyObservable<bool> Finished { get; }
         void Start();
+        void Update();
         void Stop();
+        bool TryGetProperty<TProperty>(out TProperty property) where TProperty : ProcessProperty;
     }
 }

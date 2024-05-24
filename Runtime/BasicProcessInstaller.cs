@@ -10,7 +10,9 @@ namespace SBaier.Process
                 .ToNew<BasicProcessQueue>()
                 .AsSingle();
 
-            binder.BindToNewSelf<Observable<Process>>()
+            binder.Bind<Observable<Process>>()
+                .And<ReadonlyObservable<Process>>()
+                .ToNew<Observable<Process>>()
                 .AsSingle();
         
             binder.BindComponent<BasicProcessStarter>()

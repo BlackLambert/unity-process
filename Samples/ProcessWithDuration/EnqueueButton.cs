@@ -40,7 +40,7 @@ namespace SBaier.Process.Samples
         {
             foreach (ProcessArguments arguments in _processArgumentsList)
             {
-                _queue.Enqueue(new ProcessWithDuration(arguments, _coroutineHelper));
+                _queue.Enqueue(new ProcessWithDuration(arguments));
             }
             _processArgumentsList.Clear();
         }

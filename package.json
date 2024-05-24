@@ -11,7 +11,7 @@
   "dependencies": {
     "nuget.moq": "2.0.0",
     "com.sbaier.unitydi": "https://github.com/BlackLambert/unity-di-package.git#v1.4.3",
-    "com.sbaier.core": "https://github.com/BlackLambert/unity-core/releases/tag/v1.0.0"
+    "com.sbaier.core": "https://github.com/BlackLambert/unity-core/releases/tag/v1.0.1"
  },
  "keywords": [
     "process"

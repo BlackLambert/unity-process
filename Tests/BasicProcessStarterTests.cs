@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Moq;
 using NUnit.Framework;
 using SBaier.DI;
@@ -78,7 +79,7 @@ namespace SBaier.Process.Tests
             yield return 0;
             Assert.AreEqual(0, _processes.Count);
             Assert.AreEqual(processArgs.Length, _handledProcesses.Count);
-            Assert.True(_handledProcesses.All(process => process.Finished.Value || process.Stopped.Value));
+            Assert.True(_handledProcesses.All(process => process.Complete.Value || process.Stopped.Value));
         }
 
         [UnityTest]
@@ -107,57 +108,7 @@ namespace SBaier.Process.Tests
 
             _queueMock.Raise(queue => queue.OnEnqueue += null);
             Assert.AreEqual(processArgs.Length, _handledProcesses.Count);
-            Assert.True(_handledProcesses.All(process => process.Finished.Value || process.Stopped.Value));
-        }
-
-        [UnityTest]
-        public IEnumerator ProcessStarter_CleanStopsCurrentProcess(
-            [ValueSource(nameof(_singleProcessArguments))]
-            ProcessArgs processArgs)
-        {
-            Initialize(Array.Empty<ProcessArgs>());
-            yield return 0;
-            Mock<Process> processMock = CreateInfiniteProcessMock(processArgs);
-            bool processEnded = processArgs.Stopped || processArgs.Progress == 1f;
-
-            void OnStopCallback()
-            {
-                processEnded = true;
-            }
-
-            processMock.Setup(process => process.Stop()).Callback(OnStopCallback);
-            _processes.Add(processMock.Object);
-            _queueMock.Raise(queue => queue.OnEnqueue += null);
-            _processStarter.Clean();
-            Assert.True(processEnded);
-        }
-
-        [UnityTest]
-        public IEnumerator ProcessStarter_UpdatesCurrentProcess(
-            [ValueSource(nameof(_singleProcessArguments))] ProcessArgs processArgs,
-            [ValueSource(nameof(_updatesAmount))] int updatesAmount)
-        {
-            Initialize(Array.Empty<ProcessArgs>());
-            yield return 0;
-            Mock<Process> processMock = CreateInfiniteProcessMock(processArgs);
-            bool processEnded = processArgs.Stopped || processArgs.Progress == 1f;
-
-            if (processEnded)
-            {
-                yield return null;
-            }
-            else
-            {
-                _processes.Add(processMock.Object);
-                _queueMock.Raise(queue => queue.OnEnqueue += null);
-                for (int i = 0; i < updatesAmount; i++)
-                {
-                    yield return 0;
-                }
-                processMock.Verify(process => process.Update(), Times.Exactly(updatesAmount));
-                processMock.Setup(process => process.Finished.Value).Returns(true);
-                processMock.Raise(process => process.Finished.OnValueChanged += null);
-            }
+            Assert.True(_handledProcesses.All(process => process.Complete.Value || process.Stopped.Value));
         }
 
         private void Initialize(ProcessArgs[] processArgs)
@@ -223,10 +174,10 @@ namespace SBaier.Process.Tests
             {
                 _startedProcessesCount++;
                 ((Observable<float>)processMock.Object.Progress).Value = 1.0f;
-                ((Observable<bool>)processMock.Object.Finished).Value = true;
+                ((Observable<bool>)processMock.Object.Complete).Value = true;
             }
 
-            processMock.Setup(process => process.Start()).Callback(ProcessStarted);
+            processMock.Setup(process => process.Run(It.IsAny<CancellationToken>())).Callback(ProcessStarted);
             return processMock;
         }
 
@@ -239,7 +190,7 @@ namespace SBaier.Process.Tests
                 _startedProcessesCount++;
             }
 
-            processMock.Setup(process => process.Start()).Callback(ProcessStarted);
+            processMock.Setup(process => process.Run(It.IsAny<CancellationToken>())).Callback(ProcessStarted);
             return processMock;
         }
 
@@ -248,7 +199,7 @@ namespace SBaier.Process.Tests
             Mock<Process> processMock = new Mock<Process>();
             processMock.Setup(process => process.Progress).Returns(CreateObservableMock(args.Progress));
             processMock.Setup(process => process.Stopped).Returns(CreateObservableMock(args.Stopped));
-            processMock.Setup(process => process.Finished).Returns(CreateObservableMock(args.Progress == 1.0f));
+            processMock.Setup(process => process.Complete).Returns(CreateObservableMock(args.Progress == 1.0f));
             return processMock;
         }
 

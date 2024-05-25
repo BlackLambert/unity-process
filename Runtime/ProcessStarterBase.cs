@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using SBaier.DI;
 using UnityEngine;
@@ -8,6 +9,7 @@ namespace SBaier.Process
     {
         private ProcessQueue _queue;
         private Observable<Process> _currentProcess;
+        private CancellationTokenSource _cancellationTokenSource;
 
         public virtual void Inject(Resolver resolver)
         {
@@ -19,11 +21,6 @@ namespace SBaier.Process
         {
             _queue.OnEnqueue += OnProcessEnqueued;
             await TryStartNextProcess(immediately: false);
-        }
-
-        private void Update()
-        {
-            _currentProcess?.Value?.Update();
         }
 
         public async void Clean()
@@ -40,15 +37,20 @@ namespace SBaier.Process
             }
             
             Process process = _queue.Dequeue();
-            if (process.Finished.Value || process.Stopped.Value)
+            if (process.Complete.Value || process.Stopped.Value)
             {
                 await TryStartNextProcess(immediately);
                 return;
             }
             
-            AddListeners(process);
             _currentProcess.Value = process;
-            await StartProcess(process, immediately);
+            _cancellationTokenSource = new CancellationTokenSource();
+            await RunProcess(process, _cancellationTokenSource.Token, immediately);
+            bool queueHasNext = _queue.HasNext;
+            await CleanOnProcessEnded(process: process, immediately: queueHasNext);
+            CleanCancellationToken();
+            _currentProcess.Value = null;
+            await TryStartNextProcess(queueHasNext);
         }
 
         private async Task TryStopCurrentProcess()
@@ -59,45 +61,29 @@ namespace SBaier.Process
                 return;
             }
 
-            RemoveListeners(process);
-            process.Stop();
+            _cancellationTokenSource.Cancel();
             await CleanOnProcessEnded(process, true);
             _currentProcess.Value = null;
-        }
-
-        private void AddListeners(Process process)
-        {
-            process.Stopped.OnValueChanged += OnProcessEnded;
-            process.Finished.OnValueChanged += OnProcessEnded;
-        }
-
-        private void RemoveListeners(Process process)
-        {
-            process.Stopped.OnValueChanged -= OnProcessEnded;
-            process.Finished.OnValueChanged -= OnProcessEnded;
         }
 
         private async void OnProcessEnqueued()
         {
             await TryStartNextProcess(immediately: false);
         }
-
-        private async void OnProcessEnded(bool formerValue, bool newValue)
+        
+        private void CleanCancellationToken()
         {
-            if (!newValue)
+            if (_cancellationTokenSource == null)
             {
                 return;
             }
             
-            Process process = _currentProcess.Value;
-            bool queueHasNext = _queue.HasNext;
-            RemoveListeners(process);
-            await CleanOnProcessEnded(process: process, immediately: queueHasNext);
-            _currentProcess.Value = null;
-            await TryStartNextProcess(immediately: queueHasNext);
+            _cancellationTokenSource.Dispose();
+            _cancellationTokenSource = null;
         }
 
-        protected abstract Task StartProcess(Process process, bool immediately);
+        protected abstract Task RunProcess(Process process, CancellationToken token, bool immediately);
         protected abstract Task CleanOnProcessEnded(Process process, bool immediately);
+
     }
 }

@@ -1,13 +1,13 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SBaier.Process
 {
     public class BasicProcessStarter: ProcessStarterBase
     {
-        protected override Task StartProcess(Process process, bool immediately)
+        protected override async Task RunProcess(Process process, CancellationToken token, bool immediately)
         {
-            process.Start();
-            return Task.CompletedTask;
+            await process.Run(token);
         }
 
         protected override Task CleanOnProcessEnded(Process process, bool immediately)

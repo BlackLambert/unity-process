@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace SBaier.Process.UI
 {
-    public class ProcessProgressBar : MonoBehaviour, Injectable, Initializable, Cleanable
+    public class SliderProcessProgressBar : MonoBehaviour, Injectable, Initializable, Cleanable
     {
         [SerializeField] 
         private Slider _slider;

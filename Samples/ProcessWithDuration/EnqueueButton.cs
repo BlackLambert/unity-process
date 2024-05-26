@@ -51,32 +51,25 @@ namespace SBaier.Process.Samples
 
         private Process CreateFixedDurationProcess(ProcessArguments arguments)
         {
-            FixedDurationProcess process = new FixedDurationProcess(arguments.Duration);
-            process.AddProperty<ProcessName>(new BasicProcessName(arguments.Name + " (Duration)"));
-            return process;
+            return new FixedDurationProcess(arguments.Duration).WithName(arguments.Name + " (Duration)");
         }
 
         private Process CreateTaskProcess(ProcessArguments arguments)
         {
-            TaskProcess process = new TaskProcess(() => Task.Delay((int)(arguments.Duration * 1000)));
-            process.AddProperty<ProcessName>(new BasicProcessName(arguments.Name + " (Task)"));
-            return process;
+            return new TaskProcess(() => Task.Delay((int)(arguments.Duration * 1000)))
+                    .WithName(arguments.Name + " (Task)");
         }
 
         private Process CreateAsyncGroupProcess(List<ProcessArguments> processArgumentsList)
         {
-            IEnumerable<Process> processes = processArgumentsList.Select(CreateFixedDurationProcess);
-            AsynchronousProcessGroup process = new AsynchronousProcessGroup(processes.ToList());
-            process.AddProperty<ProcessName>(new GroupProcessName(process, "Running parallel process ({0}/{1}): {2}"));
-            return process;
+            return new AsynchronousProcessGroup(processArgumentsList.Select(CreateFixedDurationProcess).ToList())
+                    .WithGroupName("Running parallel process ({0}/{1}): {2}");
         }
 
         private Process CreateSyncGroupProcess(List<ProcessArguments> processArgumentsList)
         {
-            IEnumerable<Process> processes = processArgumentsList.Select(CreateFixedDurationProcess);
-            SynchronousProcessGroup process = new SynchronousProcessGroup(processes.ToList());
-            process.AddProperty<ProcessName>(new GroupProcessName(process, "Running sequential process ({0}/{1}): {2}"));
-            return process;
+            return new SynchronousProcessGroup(processArgumentsList.Select(CreateFixedDurationProcess).ToList())
+                .WithGroupName("Running sequential process ({0}/{1}): {2}");
         }
     }
 }

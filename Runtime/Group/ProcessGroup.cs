@@ -1,6 +1,6 @@
 namespace SBaier.Process
 {
-    public interface ProcessGroup
+    public interface ProcessGroup : Process
     {
         ReadonlyObservable<Process> CurrentProcess { get; }
         ReadonlyObservable<int> HandledProcessesAmount { get; }

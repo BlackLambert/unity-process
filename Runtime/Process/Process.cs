@@ -11,5 +11,6 @@ namespace SBaier.Process
         ReadonlyObservable<bool> Complete { get; }
         Task Run(CancellationToken token);
         bool TryGetProperty<TProperty>(out TProperty property) where TProperty : ProcessProperty;
+        void AddProperty<TProperty>(TProperty property) where TProperty : ProcessProperty;
     }
 }

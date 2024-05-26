@@ -5,20 +5,23 @@ using System.Threading.Tasks;
 
 namespace SBaier.Process
 {
-    public class SynchronousProcessGroup : ProcessBase
+    public class SynchronousProcessGroup : ProcessGroupBase
     {
-        private readonly IReadOnlyCollection<Process> _processes;
-        
-        public SynchronousProcessGroup(IReadOnlyCollection<Process> processes)
+        public SynchronousProcessGroup(IReadOnlyCollection<Process> processes) : base(processes)
         {
-            _processes = processes;
+            
         }
-        
+
         protected override async Task RunInternal(CancellationToken token)
         {
+            _totalProcessAmount.Value = _processes.Count;
+            _handledProcessAmount.Value = 0;
+            
             foreach (Process process in _processes)
             {
+                _currentProcess.Value = process;
                 await process.Run(token);
+                _handledProcessAmount.Value++;
             }
         }
 

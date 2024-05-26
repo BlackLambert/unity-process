@@ -8,12 +8,12 @@ namespace SBaier.Process.UI
     {
         [SerializeField] private TextMeshProUGUI _text;
 
-        private Observable<Process> _currentProcess;
+        private ReadonlyObservable<Process> _currentProcess;
         private ProcessName _processName = null;
 
         public void Inject(Resolver resolver)
         {
-            _currentProcess = resolver.Resolve<Observable<Process>>();
+            _currentProcess = resolver.Resolve<ReadonlyObservable<Process>>();
         }
 
         public void Initialize()
@@ -54,7 +54,7 @@ namespace SBaier.Process.UI
 
         private void UpdateName()
         {
-            _text.text = _processName?.Name ?? string.Empty;
+            _text.text = _processName?.Name.Value ?? string.Empty;
         }
 
         private void OnNameChanged(string formervalue, string newvalue)

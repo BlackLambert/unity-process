@@ -63,7 +63,10 @@ namespace SBaier.Process.UI
 
         private void UpdateProgress()
         {
-            _slider.value = _currentProcess.Value?.Progress.Value ?? 0;
+            if (_slider)
+            {
+                _slider.value = _currentProcess.Value?.Progress.Value ?? 0;
+            }
         }
     }
 }

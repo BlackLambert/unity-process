@@ -15,11 +15,9 @@ namespace SBaier.Process.Samples
         
         private List<ProcessArguments> _processArgumentsList;
         private ProcessQueue _queue;
-        private CoroutineHelper _coroutineHelper;
         
         public void Inject(Resolver resolver)
         {
-            _coroutineHelper = resolver.Resolve<CoroutineHelper>();
             _processArgumentsList = resolver.Resolve<List<ProcessArguments>>();
             _queue = resolver.Resolve<ProcessQueue>();
         }
@@ -54,32 +52,30 @@ namespace SBaier.Process.Samples
         private Process CreateFixedDurationProcess(ProcessArguments arguments)
         {
             FixedDurationProcess process = new FixedDurationProcess(arguments.Duration);
-            process.AddProperty(new ProcessName(arguments.Name + " (Duration)"));
+            process.AddProperty<ProcessName>(new BasicProcessName(arguments.Name + " (Duration)"));
             return process;
         }
 
         private Process CreateTaskProcess(ProcessArguments arguments)
         {
             TaskProcess process = new TaskProcess(() => Task.Delay((int)(arguments.Duration * 1000)));
-            process.AddProperty(new ProcessName(arguments.Name + " (Task)"));
+            process.AddProperty<ProcessName>(new BasicProcessName(arguments.Name + " (Task)"));
             return process;
         }
 
         private Process CreateAsyncGroupProcess(List<ProcessArguments> processArgumentsList)
         {
-            IEnumerable<FixedDurationProcess> processes = 
-                processArgumentsList.Select(args => new FixedDurationProcess(args.Duration));
+            IEnumerable<Process> processes = processArgumentsList.Select(CreateFixedDurationProcess);
             AsynchronousProcessGroup process = new AsynchronousProcessGroup(processes.ToList());
-            process.AddProperty(new ProcessName("Async group"));
+            process.AddProperty<ProcessName>(new GroupProcessName(process, "Running parallel process ({0}/{1}): {2}"));
             return process;
         }
 
         private Process CreateSyncGroupProcess(List<ProcessArguments> processArgumentsList)
         {
-            IEnumerable<FixedDurationProcess> processes = 
-                processArgumentsList.Select(args => new FixedDurationProcess(args.Duration));
+            IEnumerable<Process> processes = processArgumentsList.Select(CreateFixedDurationProcess);
             SynchronousProcessGroup process = new SynchronousProcessGroup(processes.ToList());
-            process.AddProperty(new ProcessName("Sync group"));
+            process.AddProperty<ProcessName>(new GroupProcessName(process, "Running sequential process ({0}/{1}): {2}"));
             return process;
         }
     }

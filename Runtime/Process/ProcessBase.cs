@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace SBaier.Process
 {
@@ -19,6 +20,14 @@ namespace SBaier.Process
         private readonly Dictionary<Type, ProcessProperty> _properties = new();
 
         private bool _started = false;
+        
+        public virtual void Dispose()
+        {
+            foreach (ProcessProperty property in _properties.Values)
+            {
+                property.Dispose();
+            }
+        }
 
         public async Task Run(CancellationToken token)
         {
@@ -26,22 +35,16 @@ namespace SBaier.Process
             _started = true;
             Task internalTask = RunInternal(token);
 
-            while (!internalTask.IsCanceled && 
-                   !internalTask.IsCompleted && 
-                   !internalTask.IsFaulted && 
-                   !token.IsCancellationRequested)
+            while (!IsDone(internalTask, token))
             {
                 await Task.Delay(_delayInMilliseconds, token);
-                float progress = GetProgress();
-                if (Math.Abs(_progress.Value - progress) > float.Epsilon)
-                {
-                    _progress.Value = GetProgress();
-                }
+                UpdateProgress();
             }
 
-            _finished.Value = internalTask.IsCompletedSuccessfully;
-            bool canceled = token is { IsCancellationRequested: true };
-            _stopped.Value = internalTask.IsCanceled || canceled;
+            TryLogError(internalTask);
+            UpdateFinished(internalTask);
+            UpdateStopped(internalTask, token);
+            internalTask.Dispose();
         }
 
         public bool TryGetProperty<TProperty>(out TProperty property) where TProperty : ProcessProperty
@@ -64,7 +67,45 @@ namespace SBaier.Process
             }
         }
 
+        private void UpdateProgress()
+        {
+            float progress = GetProgress();
+            if (Math.Abs(_progress.Value - progress) > float.Epsilon)
+            {
+                _progress.Value = GetProgress();
+            }
+        }
+
+        private void UpdateFinished(Task task)
+        {
+            _finished.Value = task.IsCompletedSuccessfully;
+        }
+
+        private void UpdateStopped(Task task, CancellationToken token)
+        {
+            _stopped.Value = task.IsCanceled || token is { IsCancellationRequested: true };
+        }
+
+        private bool IsDone(Task task, CancellationToken token)
+        {
+            return IsDone(task) || token.IsCancellationRequested;
+        }
+
+        private bool IsDone(Task task)
+        {
+            return task.IsCompleted || task.IsFaulted || task.IsCanceled;
+        }
+
+        private void TryLogError(Task task)
+        {
+            if (task.IsFaulted)
+            {
+                Debug.LogError($"Failed to run process: {task.Exception?.Message ?? string.Empty}");
+            }
+        }
+
         protected abstract Task RunInternal(CancellationToken token);
         protected abstract float GetProgress();
+
     }
 }

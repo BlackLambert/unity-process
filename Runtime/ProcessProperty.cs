@@ -1,6 +1,8 @@
+using System;
+
 namespace SBaier.Process
 {
-    public interface ProcessProperty
+    public interface ProcessProperty : IDisposable
     {
         
     }

@@ -1,9 +1,10 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SBaier.Process
 {
-    public interface Process
+    public interface Process : IDisposable
     {
         ReadonlyObservable<float> Progress { get; }
         ReadonlyObservable<bool> Stopped { get; }

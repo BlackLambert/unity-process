@@ -8,10 +8,11 @@ using NUnit.Framework;
 using SBaier.DI;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 namespace SBaier.Process.Tests
 {
-    public class BasicProcessStarterTests : MonoBehaviour
+    public class BasicProcessStarterTests
     {
         private static ProcessArgs[][] _initialProcessValues =
         {
@@ -32,25 +33,12 @@ namespace SBaier.Process.Tests
             },
         };
 
-        private static ProcessArgs[] _singleProcessArguments =
-        {
-            new ProcessArgs() { Progress = 0.3f, Stopped = false },
-            new ProcessArgs() { Progress = 0, Stopped = true },
-            new ProcessArgs() { Progress = 1, Stopped = false },
-            new ProcessArgs() { Progress = 0, Stopped = false }
-        };
-
-        private static int[] _updatesAmount =
-        {
-            3, 0, 5, 15
-        };
-
         private Mock<ProcessQueue> _queueMock;
         private Mock<Resolver> _resolver;
         private BasicProcessStarter _processStarter;
         private int _startedProcessesCount = 0;
-        private List<Process> _processes = new();
-        private List<Process> _handledProcesses = new();
+        private readonly List<Process> _processes = new();
+        private readonly List<Process> _handledProcesses = new();
 
         [SetUp]
         public void Setup()
@@ -62,7 +50,7 @@ namespace SBaier.Process.Tests
         public void TearDown()
         {
             _processStarter.Clean();
-            Destroy(_processStarter.gameObject);
+            Object.DestroyImmediate(_processStarter.gameObject);
             _processStarter = null;
             _queueMock = null;
             _startedProcessesCount = 0;
@@ -175,19 +163,6 @@ namespace SBaier.Process.Tests
                 _startedProcessesCount++;
                 ((Observable<float>)processMock.Object.Progress).Value = 1.0f;
                 ((Observable<bool>)processMock.Object.Complete).Value = true;
-            }
-
-            processMock.Setup(process => process.Run(It.IsAny<CancellationToken>())).Callback(ProcessStarted);
-            return processMock;
-        }
-
-        private Mock<Process> CreateInfiniteProcessMock(ProcessArgs args)
-        {
-            Mock<Process> processMock = CreateBasicProcessMock(args);
-
-            void ProcessStarted()
-            {
-                _startedProcessesCount++;
             }
 
             processMock.Setup(process => process.Run(It.IsAny<CancellationToken>())).Callback(ProcessStarted);

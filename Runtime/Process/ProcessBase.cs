@@ -37,7 +37,7 @@ namespace SBaier.Process
 
             while (!IsDone(internalTask, token))
             {
-                await Task.Delay(_delayInMilliseconds, token);
+                await Task.Yield();
                 UpdateProgress();
             }
 

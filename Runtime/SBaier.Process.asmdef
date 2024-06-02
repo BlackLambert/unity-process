@@ -3,7 +3,8 @@
     "rootNamespace": "SBaier.Process",
     "references": [
         "GUID:a4e2fcc097ca52d46a2cc62ef3c5e9bf",
-        "GUID:c49894f435cfe854695f32ca9b59a9ff"
+        "GUID:c49894f435cfe854695f32ca9b59a9ff",
+        "GUID:26b94b4b783ec184c95c0ec2bbe6ebce"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

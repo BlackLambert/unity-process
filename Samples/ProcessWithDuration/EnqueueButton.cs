@@ -15,11 +15,13 @@ namespace SBaier.Process.Samples
         
         private List<ProcessArguments> _processArgumentsList;
         private ProcessQueue _queue;
+        private SBaier.Time.Time _time;
         
         public void Inject(Resolver resolver)
         {
             _processArgumentsList = resolver.Resolve<List<ProcessArguments>>();
             _queue = resolver.Resolve<ProcessQueue>();
+            _time = resolver.Resolve<SBaier.Time.Time>();
         }
 
         private void Start()
@@ -51,25 +53,30 @@ namespace SBaier.Process.Samples
 
         private Process CreateFixedDurationProcess(ProcessArguments arguments)
         {
-            return new FixedDurationProcess(arguments.Duration).WithName(arguments.Name + " (Duration)");
+            return new FixedDurationProcess(arguments.Duration, _time, true)
+                .WithName(arguments.Name + " (Duration)")
+                .WithStartTime(_time);
         }
 
         private Process CreateTaskProcess(ProcessArguments arguments)
         {
             return new TaskProcess(() => Task.Delay((int)(arguments.Duration * 1000)))
-                    .WithName(arguments.Name + " (Task)");
+                    .WithName(arguments.Name + " (Task)")
+                    .WithUnscaledStartTime(_time);
         }
 
         private Process CreateAsyncGroupProcess(List<ProcessArguments> processArgumentsList)
         {
             return new AsynchronousProcessGroup(processArgumentsList.Select(CreateFixedDurationProcess).ToList())
-                    .WithGroupName("Running parallel process ({0}/{1}): {2}");
+                    .WithGroupName("Running parallel process ({0}/{1}): {2}")
+                    .WithStartTime(_time);
         }
 
         private Process CreateSyncGroupProcess(List<ProcessArguments> processArgumentsList)
         {
             return new SynchronousProcessGroup(processArgumentsList.Select(CreateFixedDurationProcess).ToList())
-                .WithGroupName("Running sequential process ({0}/{1}): {2}");
+                .WithGroupName("Running sequential process ({0}/{1}): {2}")
+                .WithStartTime(_time);
         }
     }
 }

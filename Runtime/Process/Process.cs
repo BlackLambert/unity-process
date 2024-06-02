@@ -8,6 +8,7 @@ namespace SBaier.Process
     {
         ReadonlyObservable<float> Progress { get; }
         ReadonlyObservable<bool> Stopped { get; }
+        ReadonlyObservable<bool> Started { get; }
         ReadonlyObservable<bool> Complete { get; }
         Task Run(CancellationToken token);
         bool TryGetProperty<TProperty>(out TProperty property) where TProperty : ProcessProperty;

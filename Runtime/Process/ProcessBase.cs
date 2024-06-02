@@ -10,16 +10,18 @@ namespace SBaier.Process
     {
         protected const int _delayInMilliseconds = 33;
 
+        public event Action OnStarted;
+        
         public ReadonlyObservable<float> Progress => _progress;
         public ReadonlyObservable<bool> Stopped => _stopped;
+        public ReadonlyObservable<bool> Started => _started;
         public ReadonlyObservable<bool> Complete => _finished;
 
         private readonly Observable<float> _progress = 0;
         private readonly Observable<bool> _finished = false;
         private readonly Observable<bool> _stopped = false;
+        private readonly Observable<bool> _started = false;
         private readonly Dictionary<Type, ProcessProperty> _properties = new();
-
-        private bool _started = false;
         
         public virtual void Dispose()
         {
@@ -32,8 +34,9 @@ namespace SBaier.Process
         public async Task Run(CancellationToken token)
         {
             ValidateRun();
-            _started = true;
+            _started.Value = true;
             Task internalTask = RunInternal(token);
+            OnStarted?.Invoke();
 
             while (!IsDone(internalTask, token))
             {
@@ -61,7 +64,7 @@ namespace SBaier.Process
 
         private void ValidateRun()
         {
-            if (_started)
+            if (_started.Value)
             {
                 throw new InvalidOperationException("Execute called on a process that is already running");
             }

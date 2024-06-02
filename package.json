@@ -1,18 +1,18 @@
 {
   "name": "com.sbaier.process",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "displayName": "Unity Process",
   "description": "Process base logic",
   "unity": "2021.2",
   "unityRelease": "",
   "documentationUrl": "https://github.com/BlackLambert/unity-process",
-  "changelogUrl": "https://github.com/BlackLambert/unity-process/releases/tag/v1.1.1",
+  "changelogUrl": "https://github.com/BlackLambert/unity-process/releases/tag/v1.1.2",
   "licensesUrl": "",
   "dependencies": {
     "nuget.moq": "2.0.0",
     "com.sbaier.unitydi": "https://github.com/BlackLambert/unity-di-package.git#v1.4.3",
     "com.sbaier.core": "https://github.com/BlackLambert/unity-core.git#v1.0.1",
-    "com.sbaier.time": "https://github.com/BlackLambert/unity-time.git#v1.0.0"
+    "com.sbaier.time": "https://github.com/BlackLambert/unity-time.git#v1.0.1"
  },
  "keywords": [
     "process"
